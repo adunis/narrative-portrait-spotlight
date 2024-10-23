@@ -22,7 +22,46 @@ const PortraitDisplay = (() => {
         portraitDiv.id = `portrait-display-${data.tokenId}`;
         portraitDiv.innerHTML = `
             <style>
-                /* Your CSS styles here */
+                @keyframes portraitFadeIn {
+                    from { 
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.9);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+                }
+                @keyframes portraitFadeOut {
+                    from { 
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+                    to { 
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.9);
+                    }
+                }
+                .portrait-container {
+                    position: fixed;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 100000;
+                    animation: portraitFadeIn 1s ease;
+                    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+                    border-radius: 15px;
+                    pointer-events: none;
+                }
+                .portrait-container.fadeout {
+                    animation: portraitFadeOut 1s ease;
+                }
+                .portrait-container img {
+                    width: 1000px;
+                    height: 1000px;
+                    object-fit: cover;
+                    border-radius: 15px;
+                }
             </style>
         `;
 
