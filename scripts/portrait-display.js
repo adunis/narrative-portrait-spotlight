@@ -1,26 +1,35 @@
 // Register socket for player visibility on all clients
 Hooks.once('ready', () => {
-    game.socket.on('module.portrait-display', PortraitDisplay.handlePortraitDisplay);
+    // Attach methods to the game object
+    game.PortraitDisplay = {
+        displayPortrait,
+        handlePortraitDisplay
+    };
+
+    // Register socket listener
+    game.socket.on('module.portrait-display', game.PortraitDisplay.handlePortraitDisplay);
 });
 
 // Define your module namespace
 const PortraitDisplay = (() => {
 
-    function handlePortraitDisplay(data) {
-        if (data.sceneId !== canvas.scene.id) return;
+function handlePortraitDisplay(data) {
+    if (data.sceneId !== canvas.scene.id) return;
 
-        const existingDisplay = document.querySelector(`#portrait-display-${data.tokenId}`);
-        if (existingDisplay) {
-            existingDisplay.style.animation = 'portraitFadeOut 1s';
-            setTimeout(() => existingDisplay.remove(), 1000);
-            if (!data.show) return;
-        }
-
+    const existingDisplay = document.querySelector(`#portrait-display-${data.tokenId}`);
+    if (existingDisplay) {
+        existingDisplay.style.animation = 'portraitFadeOut 1s';
+        setTimeout(() => existingDisplay.remove(), 1000);
         if (!data.show) return;
+    }
 
-        const portraitDiv = document.createElement('div');
-        portraitDiv.id = `portrait-display-${data.tokenId}`;
-        portraitDiv.innerHTML = `
+    if (!data.show) return;
+
+    const portraitDiv = document.createElement('div');
+    portraitDiv.id = `portrait-display-${data.tokenId}`;
+
+    // Include your CSS styles here or ensure they are accessible
+    portraitDiv.innerHTML = `
             <style>
                 @keyframes portraitFadeIn {
                     from { 
@@ -65,32 +74,33 @@ const PortraitDisplay = (() => {
             </style>
         `;
 
-        const container = document.createElement('div');
-        container.className = 'portrait-container';
+    const container = document.createElement('div');
+    container.className = 'portrait-container';
 
-        const img = document.createElement('img');
-        img.src = data.portraitUrl;
+    const img = document.createElement('img');
+    img.src = data.portraitUrl;
 
-        container.appendChild(img);
-        portraitDiv.appendChild(container);
-        document.body.appendChild(portraitDiv);
-    }
+    container.appendChild(img);
+    portraitDiv.appendChild(container);
+    document.body.appendChild(portraitDiv);
+}
+    
+async function displayPortrait(tokenId, portraitUrl, show = true) {
+    await game.socket.emit('module.portrait-display', {
+        tokenId,
+        portraitUrl,
+        show,
+        sceneId: canvas.scene.id
+    });
 
-    async function displayPortrait(tokenId, portraitUrl, show = true) {
-        await game.socket.emit('module.portrait-display', {
-            tokenId: tokenId,
-            portraitUrl: portraitUrl,
-            show: show,
-            sceneId: canvas.scene.id
-        });
-        // Optionally handle local display
-        PortraitDisplay.handlePortraitDisplay({
-            tokenId: tokenId,
-            portraitUrl: portraitUrl,
-            show: show,
-            sceneId: canvas.scene.id
-        });
-    }
+    // Optionally handle local display
+    game.PortraitDisplay.handlePortraitDisplay({
+        tokenId,
+        portraitUrl,
+        show,
+        sceneId: canvas.scene.id
+    });
+}
 
     // Expose public methods
     return {
