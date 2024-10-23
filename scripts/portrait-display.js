@@ -1,24 +1,23 @@
-// Register socket for player visibility on all clients
 Hooks.once('ready', () => {
-    // Attach methods to the game object
-    game.PortraitDisplay = {
+    // Attach methods to the game object using the correct namespace
+    game.NarrativePortraitSpotlight = {
         displayPortrait,
         handlePortraitDisplay
     };
 
     // Register socket listener
-    game.socket.on('module.portrait-display', game.PortraitDisplay.handlePortraitDisplay);
+    game.socket.on('module.narrative-portrait-spotlight', game.NarrativePortraitSpotlight.handlePortraitDisplay);
 });
 
-// Define your module namespace
-const PortraitDisplay = (() => {
-
+// Function to handle displaying the portrait
 function handlePortraitDisplay(data) {
+    console.log('Received socket event on client:', game.user.name, data);
+
     if (data.sceneId !== canvas.scene.id) return;
 
     const existingDisplay = document.querySelector(`#portrait-display-${data.tokenId}`);
     if (existingDisplay) {
-        existingDisplay.style.animation = 'portraitFadeOut 1s';
+        existingDisplay.style.animation = 'fadeOut 1s';
         setTimeout(() => existingDisplay.remove(), 1000);
         if (!data.show) return;
     }
@@ -28,7 +27,7 @@ function handlePortraitDisplay(data) {
     const portraitDiv = document.createElement('div');
     portraitDiv.id = `portrait-display-${data.tokenId}`;
 
-    // Include your CSS styles here or ensure they are accessible
+    // Include your CSS styles here
     portraitDiv.innerHTML = `
             <style>
                 @keyframes portraitFadeIn {
