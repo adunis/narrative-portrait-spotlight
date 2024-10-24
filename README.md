@@ -31,6 +31,12 @@ https://github.com/user-attachments/assets/9b46d134-84dc-445d-9bb5-3ff819ba8ba3
 
 ---
 
+### Prerequisites
+
+- **Sequencer**: This module requires the [Sequencer](https://foundryvtt.com/packages/sequencer/) module to function properly. Make sure Sequencer is installed and enabled before installing Narrator Portrait Spotlight.
+
+---
+
 ## Installation
 
 **Narrator Portrait Spotlight** can be installed by copying the `module.json` link from the [Releases](https://github.com/your-repo/narrator-portrait-spotlight/releases) in Foundry VTT.
