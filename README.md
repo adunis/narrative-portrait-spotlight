@@ -93,7 +93,7 @@ https://github.com/user-attachments/assets/9b46d134-84dc-445d-9bb5-3ff819ba8ba3
 
 If you encounter any issues or have suggestions for improvement, please create an issue here:
 
-- **GitHub Issues**: [narrator-portrait-spotlight/issues](https://github.com/your-repo/narrator-portrait-spotlight/issues)
+- **GitHub Issues**: [[[narrator-portrait-spotlight/issues]([https://github.com/your-repo/narrator-portrait-spotlight/issues)](https://github.com/adunis/narrative-portrait-spotlight/issues))](https://github.com/adunis/narrative-portrait-spotlight/issues)](https://github.com/adunis/narrative-portrait-spotlight/issues)
 
 ---
 
