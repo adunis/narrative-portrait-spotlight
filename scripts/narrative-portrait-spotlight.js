@@ -120,3 +120,55 @@ function createPortraitElement(tokenId, portraitUrl) {
     
     return portraitDiv;
 }
+
+/**
+ * Fades out and removes an element
+ * @param {HTMLElement} element - The element to remove
+ * @returns {Promise} Resolves when the animation is complete
+ */
+function fadeOutAndRemove(element) {
+    return new Promise(resolve => {
+        const container = element.querySelector('.portrait-container');
+        container.classList.add('fadeout');
+        setTimeout(() => {
+            element.remove();
+            resolve();
+        }, ANIMATION_DURATION);
+    });
+}
+
+/**
+ * Handles the display of the portrait based on the socket event data
+ * @param {Object} data - Data received from the socket event
+ */
+async function handlePortraitDisplay(data) {
+    try {
+        // Validate data
+        if (!data || !data.tokenId || !data.portraitUrl) {
+            console.error('Invalid portrait data received:', data);
+            return;
+        }
+
+        // Check if we're in the correct scene
+        if (data.sceneId !== canvas.scene?.id) {
+            return;
+        }
+
+        // Handle existing portrait
+        const existingDisplay = document.querySelector(`#portrait-display-${data.tokenId}`);
+        if (existingDisplay) {
+            await fadeOutAndRemove(existingDisplay);
+            if (!data.show) return;
+        }
+
+        // Return if we're hiding the portrait
+        if (!data.show) return;
+
+        // Create and display new portrait
+        const portraitElement = createPortraitElement(data.tokenId, data.portraitUrl);
+        document.body.appendChild(portraitElement);
+
+    } catch (error) {
+        console.error('Error handling portrait display:', error);
+    }
+}
