@@ -1,5 +1,6 @@
-// narrator-portrait-spotlight.js
-
+Hooks.once('init', () => {
+    console.log("Narrator Portrait Spotlight module initializing.");
+  
 class PortraitSpotlight {
     constructor() {
         // Initialize the portraitStageList as a module-level variable
@@ -231,5 +232,8 @@ class PortraitSpotlight {
     }
 }
 
-// Register the class instance globally so it can be accessed by macros
-game.PortraitSpotlight = new PortraitSpotlight();
+  // Register the class instance globally so it can be accessed by macros
+  game.PortraitSpotlight = new PortraitSpotlight();
+
+  console.log("Narrator Portrait Spotlight module initialized.");
+});
