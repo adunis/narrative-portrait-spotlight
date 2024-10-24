@@ -91,11 +91,9 @@ https://github.com/user-attachments/assets/9b46d134-84dc-445d-9bb5-3ff819ba8ba3
 
 ## Support
 
-If you encounter any issues or have suggestions for improvement, please reach out through the following channels:
+If you encounter any issues or have suggestions for improvement, please create an issue here:
 
 - **GitHub Issues**: [narrator-portrait-spotlight/issues](https://github.com/your-repo/narrator-portrait-spotlight/issues)
-- **Foundry VTT Forums**: [Foundry Community Forums](https://forums.foundryvtt.com/)
-- **Discord**: Join the [Foundry VTT Discord Server](https://discord.com/invite/foundryvtt) and seek assistance in the appropriate channels.
 
 ---
 
