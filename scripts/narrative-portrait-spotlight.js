@@ -13,14 +13,26 @@ Hooks.once('ready', () => {
                     tokenId,
                     portraitUrl,
                     show,
-                    sceneId: canvas.scene?.id
+                    sceneId: canvas.scene?.id,
+                    userId: game.user.id  // Add user ID for permission checking
                 };
 
-                // Emit socket event to all clients
-                game.socket.emit(SOCKET_EVENT, data);
-                
-                // Handle local display
-                handlePortraitDisplay(data);
+                // If user is GM, emit to all clients, otherwise request GM to emit
+                if (game.user.isGM) {
+                    // Emit directly as GM
+                    game.socket.emit(SOCKET_EVENT, {
+                        ...data,
+                        gmApproved: true
+                    });
+                    // Handle local display
+                    handlePortraitDisplay(data);
+                } else {
+                    // Players send a request to GM
+                    game.socket.emit(SOCKET_EVENT, {
+                        ...data,
+                        type: 'request'
+                    });
+                }
 
             } catch (error) {
                 console.error('Error displaying portrait:', error);
@@ -29,7 +41,28 @@ Hooks.once('ready', () => {
     };
 
     // Register socket listener
-    game.socket.on(SOCKET_EVENT, handlePortraitDisplay);
+    game.socket.on(SOCKET_EVENT, (data) => {
+        // Handle player requests (GM only)
+        if (data.type === 'request' && game.user.isGM) {
+            // GM validates and broadcasts to all clients
+            const token = canvas.tokens.get(data.tokenId);
+            if (token && token.actor && game.users.get(data.userId)?.character?.id === token.actor.id) {
+                // Player owns this token, approve and broadcast
+                game.socket.emit(SOCKET_EVENT, {
+                    ...data,
+                    type: undefined,
+                    gmApproved: true
+                });
+                handlePortraitDisplay(data);
+            }
+            return;
+        }
+
+        // Handle approved displays
+        if (data.gmApproved) {
+            handlePortraitDisplay(data);
+        }
+    });
 });
 
 /**
