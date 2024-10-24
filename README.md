@@ -101,6 +101,3 @@ If you encounter any issues or have suggestions for improvement, please create a
 
 **Narrator Portrait Spotlight** is released under the [MIT License](LICENSE).
 
----
-
-*Enhance your storytelling and keep track of your characters effortlessly with Narrator Portrait Spotlight!*
