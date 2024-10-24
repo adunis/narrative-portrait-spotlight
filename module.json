@@ -12,17 +12,28 @@
   },
   "authors": [
     {
-      "name": "Aleksandar Petrovic",
-      "url": "https://github.com/adunis",
-      "discord": "Adunis#1234"
-    }
+      "name": "Adunis - Butterdrinker",
+      "url": "https://github.com/adunis"  
+      }
   ],
   "relationships": {
-    "systems": [],
-    "requires": []
+    "requires": [
+      {
+        "id": "sequencer",
+        "type": "module"
+      }
+    ]
   },
   "scripts": [
     "scripts/narrative-portrait-spotlight.js"
+  ],
+  "packs": [
+    {
+      "name": "narrative-portrait-spotlight-macros",
+      "label": "Narrative Portrait Spotlight Macros",
+      "path": "packs/narrative-portrait-spotlight-macros.db",
+      "entity": "Macro"
+    }
   ],
   "styles": [],
   "languages": [],
@@ -34,7 +45,7 @@
   "media": [
     {
       "type": "icon",
-      "url": "https://avatars2.githubusercontent.com/u/71292812?s=400&u=ccdb4eeb7abf551ca8f314e5a9bfd0479a4d3d41&v=4"
-    }
+      "url": "media/icon.webp"  
+      }
   ]
 }
