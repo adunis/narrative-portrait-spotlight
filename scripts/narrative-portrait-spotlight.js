@@ -141,6 +141,7 @@ Hooks.once('ready', () => {
                         .screenSpaceAboveUI(screenSpaceAboveUI)
                         .fadeIn(fadeTime)
                         .fadeOut(fadeTime)
+                        .zIndex(0) 
                         .persist()
                         .forUsers(activeUsersFilter 
                             ? game.users.filter(u => u.active).map(u => u.id) 
@@ -174,8 +175,85 @@ Hooks.once('ready', () => {
                 await this.displayPortrait(token, !isShowing);
             }
         }
+
+        /**
+         * Adds a background image to the screen.
+         */
+        async addBackground(imageUrl = null) {
+
+
+            // If imageUrl is not provided, use the one from settings
+            const backgroundUrl = imageUrl;
+
+            const fadeTime = 2000;
+            const zIndex = -10;
+            const effectName = "background-image";
+
+            // Check if background is already active
+            const isActive = Sequencer.EffectManager.getEffects({ name: effectName }).length > 0;
+            if (isActive) {
+                this.log("Background image is already active.", '', 'info');
+                return;
+            }
+
+            try {
+                // Preload the background image to ensure it's valid
+                const { width: imgWidth, height: imgHeight } = await this.preloadImage(imageUrl);
+
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+
+                // Calculate scale to ensure the image covers the entire screen
+                const scaleX = screenWidth / imgWidth;
+                const scaleY = screenHeight / imgHeight;
+                const scale = Math.max(scaleX, scaleY); // Use the larger scale to cover the screen
+
+                await new Sequence()
+                    .effect()
+                        .name(effectName)
+                        .file(backgroundUrl)
+                        .screenSpace()
+                        .screenSpacePosition({ x: 0.5, y: 0.5 })
+                        .screenSpaceScale({ x: scale, y: scale})
+                        .screenSpaceAnchor({ x: 0.5, y: 0.5 })
+                        .screenSpaceAboveUI(false) // Ensure it's below UI
+                        .fadeIn(fadeTime)
+                        .fadeOut(fadeTime)
+                        .persist()
+                        .zIndex(zIndex)
+                        .forUsers(game.users.map(u => u.id))
+                    .play();
+
+                this.log("Background image added successfully.", '', 'info');
+            } catch (error) {
+                this.log(`Failed to add background image: ${error.message}`, '', 'error');
+                ui.notifications.error(`Failed to add background image: ${error.message}`);
+            }
+        }
+
+        /**
+         * Removes the background image from the screen.
+         */
+        async removeBackground() {
+            const effectName = "background-image";
+
+            const isActive = Sequencer.EffectManager.getEffects({ name: effectName }).length > 0;
+            if (!isActive) {
+                this.log("Background image is not active.", '', 'info');
+                return;
+            }
+
+            try {
+                await Sequencer.EffectManager.endEffects({ name: effectName });
+                this.log("Background image removed successfully.", '', 'info');
+            } catch (error) {
+                this.log(`Failed to remove background image: ${error.message}`, '', 'error');
+                ui.notifications.error(`Failed to remove background image: ${error.message}`);
+            }
+        }
     }
 
+    
     // Initialize the PortraitSpotlight instance
     game.narrativePortraitSpotlight = new PortraitSpotlight();
 
