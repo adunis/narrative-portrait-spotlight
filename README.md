@@ -2,7 +2,7 @@
 
 **Narrative Portrait Spotlight** is a Foundry VTT module designed to enhance your tabletop role-playing experience by dynamically displaying character portraits on the screen. This module distinguishes between Player Characters (PCs) and Non-Player Characters (NPCs), positioning their portraits strategically to provide clear visual cues during gameplay.
 
-
+![Uploading Screenshot 2024-10-25 131918.png…]()
 
 https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
 
