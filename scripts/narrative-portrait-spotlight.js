@@ -1,285 +1,185 @@
-// narrative-portrait-spotlight.js
+// scripts/portrait-spotlight.js
 
 Hooks.once('ready', () => {
-    console.log("Narrator Portrait Spotlight module initializing.");
-
     class PortraitSpotlight {
         constructor() {
-            this.debug = true;
+            // Fetch the current log level from settings
+            this.logLevel = game.settings.get("narrative-portrait-spotlight", "logLevel");
+        }
+
+        /**
+         * Logs messages based on the current log level.
+         * @param {string} message - The message to log.
+         * @param {object} data - Additional data to log.
+         * @param {string} level - The level of the log ('debug', 'info', 'warn', 'error').
+         */
+        log(message, data = '', level = 'debug') {
+            const levels = ['debug', 'info', 'warn', 'error'];
+            const currentLevelIndex = levels.indexOf(this.logLevel);
+            const messageLevelIndex = levels.indexOf(level);
+
+            if (messageLevelIndex >= currentLevelIndex) {
+                const formattedMessage = `Narrative Portrait Spotlight | ${message}`;
+                switch (level) {
+                    case 'debug':
+                        console.debug(formattedMessage, data);
+                        break;
+                    case 'info':
+                        console.info(formattedMessage, data);
+                        break;
+                    case 'warn':
+                        console.warn(formattedMessage, data);
+                        break;
+                    case 'error':
+                        console.error(formattedMessage, data);
+                        break;
+                    default:
+                        console.log(formattedMessage, data);
+                }
+            }
+        }
+
+        /**
+         * Preloads an image to retrieve its dimensions.
+         * @param {string} url - The URL of the image to preload.
+         * @returns {Promise<object>} - An object containing the width and height of the image.
+         */
+        preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve({ width: img.width, height: img.height });
+                img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+                img.src = url;
+            });
+        }
+
+        /**
+         * Calculates the position for a portrait based on configuration settings.
+         * @param {boolean} isPC - Indicates if the token is a Player Character.
+         * @param {number} screenWidth - The width of the screen.
+         * @param {number} screenHeight - The height of the screen.
+         * @param {number} count - The number of existing portraits.
+         * @returns {object} - An object containing the x and y coordinates.
+         */
+        getPortraitPosition(isPC, screenWidth, screenHeight, count) {
+            const pcPosition = game.settings.get("narrative-portrait-spotlight", "pcPosition");
+            const npcPosition = game.settings.get("narrative-portrait-spotlight", "npcPosition");
+            const verticalPosition = game.settings.get("narrative-portrait-spotlight", "verticalPosition");
+            const offsetStep = game.settings.get("narrative-portrait-spotlight", "offsetStep");
+
+            const baseX = screenWidth * (isPC ? pcPosition : npcPosition);
+            const baseY = screenHeight * verticalPosition;
+            const offset = count * (isPC ? -offsetStep : offsetStep) * screenWidth;
+            return { x: baseX + offset, y: baseY };
+        }
+
+        /**
+         * Retrieves the portrait URL from a token.
+         * @param {object} token - The token object.
+         * @returns {string|null} - The URL of the portrait image or null if not found.
+         */
+        getPortraitUrl(token) {
+            return token.texture?.src || token.actor?.img || token.actor?.prototypeToken?.texture?.src || null;
         }
 
         /**
          * Displays or hides a portrait for a given token.
-         * @param {string} tokenId - The ID of the token.
-         * @param {string} portraitUrl - The URL of the portrait image.
+         * @param {object} token - The token object.
          * @param {boolean} show - Whether to show or hide the portrait.
          */
-        async displayPortrait(tokenId, portraitUrl, show = true) {
+        async displayPortrait(token, show = true) {
+            const portraitUrl = this.getPortraitUrl(token);
+            if (!portraitUrl) {
+                this.log(game.settings.get("narrative-portrait-spotlight", "noPortraitFoundMessage").replace("{tokenName}", token.name), '', 'warn');
+                return;
+            }
+
+            const isPC = token.actor?.hasPlayerOwner;
+            const effectNamePrefix = game.settings.get("narrative-portrait-spotlight", "effectNamePrefix");
+            const effectName = `${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-${token.id}`;
+
+            if (!show) {
+                await Sequencer.EffectManager.endEffects({ name: effectName });
+                this.log(game.settings.get("narrative-portrait-spotlight", "hidingPortraitMessage").replace("{tokenName}", token.name), '', 'info');
+                return;
+            }
+
             try {
-                const token = canvas.tokens.get(tokenId);
-                if (!token) {
-                    console.error('Token not found:', tokenId);
-                    return;
-                }
-
-                const userIds = game.users.filter(user => user.active).map(user => user.id);
-
-                if (!show) {
-                    // Remove existing sequences for this token
-                    await Sequencer.EffectManager.endEffects({ name: `portrait-pc-${tokenId}` });
-                    await Sequencer.EffectManager.endEffects({ name: `portrait-npc-${tokenId}` });
-                    if (this.debug) console.log(`Hiding portrait for token ${token.name}`);
-                    return;
-                }
-
-                if (this.debug) {
-                    console.log('Displaying portrait for token:', {
-                        tokenId,
-                        tokenName: token.name,
-                        portraitUrl
-                    });
-                }
-
-                // Verify the image exists and can be loaded
-                const img = new Image();
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = () => reject(new Error(`Failed to load image: ${portraitUrl}`));
-                    img.src = portraitUrl;
-                });
-
-                if (this.debug) console.log('Image pre-loaded successfully');
-
-                // Preload the image for all clients
-                try {
-                    await Sequencer.Preloader.preloadForClients(portraitUrl);
-                    if (this.debug) console.log('Image preloaded for clients');
-                } catch (error) {
-                    console.error('Failed to preload image for clients:', error);
-                    // Decide whether to proceed without preloading
-                }
-
-                // Calculate screen dimensions
+                const { width, height } = await this.preloadImage(portraitUrl);
                 const screenWidth = window.innerWidth;
                 const screenHeight = window.innerHeight;
 
-                        // Define maximum height in pixels based on percentage
-               const maxHeight = screenHeight * 0.7;
+                const maxHeightPercent = game.settings.get("narrative-portrait-spotlight", "maxHeightPercent");
+                const maxWidthPercent = game.settings.get("narrative-portrait-spotlight", "maxWidthPercent");
+                const fadeTime = game.settings.get("narrative-portrait-spotlight", "fadeTime");
 
-                // Calculate the scale factor to ensure the image does not exceed maxHeight
-                let scaleValue = 0.5; 
+                const scale = Math.min(
+                    (screenHeight * maxHeightPercent) / height,
+                    (screenWidth * maxWidthPercent) / width
+                );
 
-                if (img.height > maxHeight) {
-                    scaleValue = maxHeight / img.height;
-                    if (this.debug) console.log(`Image height (${img.height}px) exceeds maxHeight (${maxHeight}px). Scaling by ${scaleValue}.`);
-                } else {
+                const existingCount = Sequencer.EffectManager.getEffects()
+                    .filter(effect => effect.data.name.startsWith(`${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-`)).length;
 
-                    const scaleUpFactor = maxHeight / img.height;
-                    scaleValue = scaleUpFactor;
-                    if (this.debug) console.log(`Image height (${img.height}px) is below maxHeight (${maxHeight}px). Scaling up by ${scaleValue}.`);
-                }
+                const position = this.getPortraitPosition(isPC, screenWidth, screenHeight, existingCount);
 
-                // Determine if the token is a PC or NPC
-                const isPC = token.actor?.hasPlayerOwner; // Adjust based on your game system
+                const anchorPoint = {
+                    x: game.settings.get("narrative-portrait-spotlight", "anchorPointX"),
+                    y: game.settings.get("narrative-portrait-spotlight", "anchorPointY")
+                };
+                const screenSpaceAboveUI = game.settings.get("narrative-portrait-spotlight", "screenSpaceAboveUI");
+                const activeUsersFilter = true;
 
-                // Set horizontal position and anchor based on PC or NPC
-                let typeStr;
-                let basePositionX;
-                let anchorX;
-
-                if (isPC) {
-                    typeStr = 'pc';
-                    basePositionX = screenWidth * 0.2; // 20% from the left
-                    anchorX = 0; // Anchor to the left edge of the image
-                } else {
-                    typeStr = 'npc';
-                    basePositionX = screenWidth * 0.7; // 80% from the left (20% from the right)
-                    anchorX = 0; // Anchor to the right edge of the image
-                }
-
-                // Get existing portraits of this type
-                const allEffects = Sequencer.EffectManager.getEffects();
-                const existingPortraits = allEffects.filter(effect => effect.data.name.startsWith(`portrait-${typeStr}-`));
-                const count = existingPortraits.length;
-
-                // Determine horizontal shift based on count
-                let shiftPercent = 0;
-                switch (count) {
-                    case 0:
-                        shiftPercent = 0;
-                        break;
-                    case 1:
-                        shiftPercent = isPC ? -0.15 : 0.15; // Slightly left for PC, slightly right for NPC
-                        break;
-                    case 2:
-                        shiftPercent = isPC ? 0.15 : -0.15; // Slightly right for PC, slightly left for NPC
-                        break;
-                    case 3:
-                        shiftPercent = isPC ? -0.15 : 0.15; // Greatly left for PC, greatly right for NPC
-                        break;
-                    case 4:
-                        shiftPercent = isPC ? 0.15 : -0.15; // Greatly right for PC, greatly left for NPC
-                        break;
-                    default:
-                        // For more than 4, cycle or set a default shift
-                        shiftPercent = isPC ? 0.10 : -0.10;
-                        break;
-                }
-
-                // Calculate final positionX with shift
-                const positionX = basePositionX + (screenWidth * shiftPercent);
-                const positionY = this.determinePositionY(img.width, img.height, screenHeight, scaleValue);                const anchorY = 0.2; // Center vertically
-
-                // Determine effect name
-                const effectName = `portrait-${typeStr}-${tokenId}`;
-
-                // Create and play the sequence
                 await new Sequence()
-                    // Portrait image
                     .effect()
                         .name(effectName)
                         .file(portraitUrl)
                         .screenSpace()
-                        .screenSpacePosition({ x: positionX, y: positionY })
-                        .screenSpaceScale({ scale: scaleValue })
-                        .screenSpaceAnchor({ x: anchorX, y: anchorY })
-                        .screenSpaceAboveUI(false)
-                        .fadeIn(500)
-                        .fadeOut(500) 
+                        .screenSpacePosition(position)
+                        .screenSpaceScale({ x: scale, y: scale })
+                        .screenSpaceAnchor(anchorPoint)
+                        .screenSpaceAboveUI(screenSpaceAboveUI)
+                        .fadeIn(fadeTime)
+                        .fadeOut(fadeTime)
                         .persist()
-                        .forUsers(userIds)
+                        .forUsers(activeUsersFilter 
+                            ? game.users.filter(u => u.active).map(u => u.id) 
+                            : game.users.map(u => u.id))
                     .play();
 
-                if (this.debug) console.log(`Sequence for ${effectName} played successfully at (${positionX}, ${positionY})`);
-
+                this.log(game.settings.get("narrative-portrait-spotlight", "displayingPortraitMessage").replace("{tokenName}", token.name), { position, scale }, 'info');
             } catch (error) {
-                console.error('Error displaying portrait:', error);
+                console.error('Narrative Portrait Spotlight Error:', error);
                 ui.notifications.error(`Failed to display portrait: ${error.message}`);
             }
         }
 
-/**
- * Determines the vertical position based on the image aspect ratio and scaled height.
- * @param {number} width - Image width in pixels.
- * @param {number} height - Image height in pixels.
- * @param {number} screenHeight - Height of the screen in pixels.
- * @param {number} scaleValue - Scaling factor applied to the image.
- * @returns {number} - Y position for the portrait in pixels.
- */
-determinePositionY(width, height, screenHeight, scaleValue) {
-    const aspectRatio = width / height;
-    const scaledHeight = height * scaleValue;
-
-    // Define a reference height for adjustment (you can tweak this value)
-    const referenceHeight = 500; // pixels
-
-    // Calculate the difference between scaled height and reference height
-    const heightDifference = scaledHeight - referenceHeight;
-
-    // Define maximum and minimum adjustments
-    const maxAdjustment = 1000;  // pixels upward
-    const minAdjustment = -1000; // pixels downward
-
-    // Calculate adjustment proportional to height difference
-    const adjustment = (heightDifference / referenceHeight) * -300; // Multiplier can be adjusted
-
-    // Clamp the adjustment to prevent excessive movement
-    const clampedAdjustment = Math.min(Math.max(adjustment, minAdjustment), maxAdjustment);
-
-    // Determine base Y position based on aspect ratio
-    let baseY;
-    if (aspectRatio > 0.9 && aspectRatio < 1.1) {
-        // Square image: place higher
-        baseY = screenHeight * 0.3; // 30% from the top
-    } else if (aspectRatio < 0.9) {
-        // Portrait image: place centered
-        baseY = screenHeight * 0.5; // 50% from the top
-    } else {
-        // Landscape or other aspect ratios: place slightly lower
-        baseY = screenHeight * 0.4; // 40% from the top
-    }
-
-    // Adjust Y position based on image height
-    const finalY = baseY - clampedAdjustment;
-
-    if (this.debug) {
-        console.log(`Aspect Ratio: ${aspectRatio.toFixed(2)}, Scaled Height: ${scaledHeight}px, Adjustment: ${clampedAdjustment}px, Final Y: ${finalY}px`);
-    }
-
-    return finalY;
-}
-
         /**
-         * Toggles portraits for all selected tokens.
+         * Toggles the portrait spotlight for all selected tokens.
          */
         async togglePortraitsForSelectedTokens() {
-            try {
-                if (this.debug) console.log('Toggling portraits for selected tokens');
+            const selectedTokens = canvas.tokens.controlled;
+            if (!selectedTokens.length) {
+                ui.notifications.warn(game.settings.get("narrative-portrait-spotlight", "noTokenSelectedMessage"));
+                return;
+            }
 
-                const selectedTokens = canvas.tokens.controlled;
-                if (selectedTokens.length === 0) {
-                    ui.notifications.warn("Please select at least one token!");
-                    return;
-                }
-
-                for (const token of selectedTokens) {
-                    const tokenId = token.id;
-
-                    // Get the portrait URL with fallbacks
-                    const portraitUrl = (() => {
-                        // Check token texture first
-                        if (token.texture?.src) {
-                            return token.texture.src;
-                        }
-
-                        // Then check actor's image
-                        if (token.actor?.img) {
-                            return token.actor.img;
-                        }
-
-                        // Finally check prototype token image
-                        if (token.actor?.prototypeToken?.texture?.src) {
-                            return token.actor.prototypeToken.texture.src;
-                        }
-
-                        return null;
-                    })();
-
-                    if (!portraitUrl) {
-                        ui.notifications.warn(`No portrait image found for ${token.name}`);
-                        if (this.debug) console.log(`No portrait URL for token ${token.name}`);
-                        continue;
-                    }
-
-                    // Determine if the token is a PC or NPC
-                    const isPC = token.actor?.hasPlayerOwner;
-                    const typeStr = isPC ? 'pc' : 'npc';
-
-                    // Check if a portrait is already displayed for this token
-                    const effectName = `portrait-${typeStr}-${tokenId}`;
-                    const existingPortrait = Sequencer.EffectManager.getEffects({ name: effectName });
-                    const isShowing = existingPortrait && existingPortrait.length > 0;
-
-                    // Display or hide the portrait
-                    await this.displayPortrait(tokenId, portraitUrl, !isShowing);
-
-                }
-            } catch (error) {
-                console.error("Portrait Spotlight Error:", error);
-                ui.notifications.error("An error occurred while toggling the portrait. Check the console for details.");
+            for (const token of selectedTokens) {
+                const isPC = token.actor?.hasPlayerOwner;
+                const effectNamePrefix = game.settings.get("narrative-portrait-spotlight", "effectNamePrefix");
+                const effectName = `${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-${token.id}`;
+                const isShowing = Sequencer.EffectManager.getEffects({
+                    name: effectName
+                }).length > 0;
+                await this.displayPortrait(token, !isShowing);
             }
         }
     }
 
-    // Register the class instance globally
-    game.PortraitSpotlight = new PortraitSpotlight();
+    // Initialize the PortraitSpotlight instance
+    game.narrativePortraitSpotlight = new PortraitSpotlight();
 
-
-    if (game.PortraitSpotlight.debug) {
-        console.log("Portrait Spotlight initialized with debugging enabled");
-    }
-
-    
+    // Example: Bind the toggle function to a hotkey or a UI button as needed
+    // For instance, you can create a macro that calls:
+    // game.narrativePortraitSpotlight.togglePortraitsForSelectedTokens();
 });
-
-

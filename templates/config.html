@@ -1,0 +1,155 @@
+<!-- templates/config.html -->
+
+<form>
+    <h2>Narrative Portrait Spotlight Configuration</h2>
+
+    <!-- Max Height Percentage -->
+    <div class="form-group">
+        <label>Max Height Percentage</label>
+        <input type="range" name="maxHeightPercent" min="0.1" max="1" step="0.05" value="{{maxHeightPercent}}" data-value="{{maxHeightPercent}}">
+        <span class="range-value">{{maxHeightPercent}}</span>
+    </div>
+
+    <!-- Max Width Percentage -->
+    <div class="form-group">
+        <label>Max Width Percentage</label>
+        <input type="range" name="maxWidthPercent" min="0.1" max="1" step="0.05" value="{{maxWidthPercent}}" data-value="{{maxWidthPercent}}">
+        <span class="range-value">{{maxWidthPercent}}</span>
+    </div>
+
+    <!-- Fade Time -->
+    <div class="form-group">
+        <label for="fadeTime">Fade Time (ms)</label>
+        <input type="number" id="fadeTime" name="fadeTime" min="100" max="2000" step="100" value="{{fadeTime}}">
+    </div>
+
+    <!-- PC Base Position -->
+    <div class="form-group">
+        <label for="pcPosition">PC Base Position</label>
+        <input type="range" id="pcPosition" name="pcPosition" min="0" max="1" step="0.05" value="{{pcPosition}}" data-value="{{pcPosition}}">
+        <span class="range-value">{{pcPosition}}</span>
+    </div>
+
+    <!-- NPC Base Position -->
+    <div class="form-group">
+        <label for="npcPosition">NPC Base Position</label>
+        <input type="range" id="npcPosition" name="npcPosition" min="0" max="1" step="0.05" value="{{npcPosition}}" data-value="{{npcPosition}}">
+        <span class="range-value">{{npcPosition}}</span>
+    </div>
+
+    <!-- Vertical Position -->
+    <div class="form-group">
+        <label for="verticalPosition">Vertical Position</label>
+        <input type="range" id="verticalPosition" name="verticalPosition" min="0" max="1" step="0.05" value="{{verticalPosition}}" data-value="{{verticalPosition}}">
+        <span class="range-value">{{verticalPosition}}</span>
+    </div>
+
+    <!-- Offset Step -->
+    <div class="form-group">
+        <label for="offsetStep">Offset Step</label>
+        <input type="range" id="offsetStep" name="offsetStep" min="0.05" max="0.5" step="0.05" value="{{offsetStep}}" data-value="{{offsetStep}}">
+        <span class="range-value">{{offsetStep}}</span>
+    </div>
+
+    <!-- Anchor Point X -->
+    <div class="form-group">
+        <label for="anchorPointX">Anchor Point X</label>
+        <input type="range" id="anchorPointX" name="anchorPointX" min="0" max="1" step="0.1" value="{{anchorPointX}}" data-value="{{anchorPointX}}">
+        <span class="range-value">{{anchorPointX}}</span>
+    </div>
+
+    <!-- Anchor Point Y -->
+    <div class="form-group">
+        <label for="anchorPointY">Anchor Point Y</label>
+        <input type="range" id="anchorPointY" name="anchorPointY" min="0" max="1" step="0.1" value="{{anchorPointY}}" data-value="{{anchorPointY}}">
+        <span class="range-value">{{anchorPointY}}</span>
+    </div>
+
+    <!-- Screen Space Above UI -->
+    <div class="form-group">
+        <label for="screenSpaceAboveUI">Portrait Above UI</label>
+        <input type="checkbox" id="screenSpaceAboveUI" name="screenSpaceAboveUI" {{#if screenSpaceAboveUI}}checked{{/if}}>
+    </div>
+
+    <!-- Effect Name Prefix -->
+    <div class="form-group">
+        <label for="effectNamePrefix">Effect Name Prefix</label>
+        <input type="text" id="effectNamePrefix" name="effectNamePrefix" value="{{effectNamePrefix}}">
+    </div>
+
+    <!-- Log Level -->
+    <div class="form-group">
+        <label for="logLevel">Log Level</label>
+        <select id="logLevel" name="logLevel">
+            <option value="debug" {{#if (eq logLevel "debug")}}selected{{/if}}>Debug</option>
+            <option value="info" {{#if (eq logLevel "info")}}selected{{/if}}>Info</option>
+            <option value="warn" {{#if (eq logLevel "warn")}}selected{{/if}}>Warn</option>
+            <option value="error" {{#if (eq logLevel "error")}}selected{{/if}}>Error</option>
+        </select>
+    </div>
+
+    <!-- No Token Selected Message -->
+    <div class="form-group">
+        <label for="noTokenSelectedMessage">No Token Selected Message</label>
+        <input type="text" id="noTokenSelectedMessage" name="noTokenSelectedMessage" value="{{noTokenSelectedMessage}}">
+    </div>
+
+    <!-- No Portrait Found Message -->
+    <div class="form-group">
+        <label for="noPortraitFoundMessage">No Portrait Found Message</label>
+        <input type="text" id="noPortraitFoundMessage" name="noPortraitFoundMessage" value="{{noPortraitFoundMessage}}">
+    </div>
+
+    <!-- Hiding Portrait Message -->
+    <div class="form-group">
+        <label for="hidingPortraitMessage">Hiding Portrait Message</label>
+        <input type="text" id="hidingPortraitMessage" name="hidingPortraitMessage" value="{{hidingPortraitMessage}}">
+    </div>
+
+    <!-- Displaying Portrait Message -->
+    <div class="form-group">
+        <label for="displayingPortraitMessage">Displaying Portrait Message</label>
+        <input type="text" id="displayingPortraitMessage" name="displayingPortraitMessage" value="{{displayingPortraitMessage}}">
+    </div>
+
+    <!-- Optional: Add more settings as needed -->
+</form>
+
+<!-- Optional: Add styles specific to the config dialog -->
+<style>
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .form-group input[type="range"] {
+        width: 100%;
+    }
+
+    .range-value {
+        margin-left: 10px;
+        font-weight: normal;
+    }
+
+    /* Additional styling can be added here */
+</style>
+
+<!-- Optional: Add client-side scripts to update range values in real-time -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const rangeInputs = document.querySelectorAll('input[type="range"]');
+        rangeInputs.forEach(input => {
+            const displaySpan = input.parentElement.querySelector('.range-value');
+            if (displaySpan) {
+                input.addEventListener('input', () => {
+                    displaySpan.textContent = input.value;
+                });
+            }
+        });
+    });
+</script>
