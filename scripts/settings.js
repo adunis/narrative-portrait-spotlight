@@ -6,6 +6,49 @@ Hooks.once('init', () => {
 
     const MODULE_NAME = "narrative-portrait-spotlight";
 
+    game.settings.register("narrative-portrait-spotlight", "playerSize", {
+        name: "Player Portrait Size",
+        hint: "Configure the maximum size for player character portraits as a percentage of screen size.",
+        scope: "world",
+        config: true,
+        type: Number,
+        default: 0.4, 
+        range: {
+            min: 0.05,
+            max: 1,
+            step: 0.01
+        }
+    });
+
+    game.settings.register("narrative-portrait-spotlight", "npcSize", {
+        name: "NPC Portrait Size",
+        hint: "Configure the maximum size for NPC portraits as a percentage of screen size.",
+        scope: "world",
+        config: true,
+        type: Number,
+        default: 0.4, 
+        range: {
+            min: 0.05,
+            max: 1,
+            step: 0.01
+        }
+    });
+    
+
+    game.settings.register("narrative-portrait-spotlight", "backgroundOpacity", {
+        name: "Background Opacity",
+        hint: "Set the opacity of the background image.",
+        scope: "world",
+        config: true,
+        type: Number,
+        default: 0.5, // 50%
+        range: {
+            min: 0,
+            max: 1,
+            step: 0.05
+        }
+    });
+
     // Register module settings
     game.settings.register(MODULE_NAME, "maxHeightPercent", {
         name: "Max Height Percentage",

@@ -46,6 +46,11 @@ Hooks.once('ready', () => {
          */
         preloadImage(url) {
             return new Promise((resolve, reject) => {
+                if (!url) {
+                    reject(new Error('No URL provided for image preloading.'));
+                    return;
+                }
+
                 const img = new Image();
                 img.onload = () => resolve({ width: img.width, height: img.height });
                 img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
@@ -99,7 +104,11 @@ Hooks.once('ready', () => {
             const effectName = `${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-${token.id}`;
 
             if (!show) {
-                await Sequencer.EffectManager.endEffects({ name: effectName });
+                if (Sequencer?.EffectManager) {
+                    await Sequencer.EffectManager.endEffects({ name: effectName });
+                } else {
+                    this.log("Sequencer or EffectManager is not available.", '', 'error');
+                }
                 this.log(game.settings.get("narrative-portrait-spotlight", "hidingPortraitMessage").replace("{tokenName}", token.name), '', 'info');
                 return;
             }
@@ -109,8 +118,13 @@ Hooks.once('ready', () => {
                 const screenWidth = window.innerWidth;
                 const screenHeight = window.innerHeight;
 
-                const maxHeightPercent = game.settings.get("narrative-portrait-spotlight", "maxHeightPercent");
-                const maxWidthPercent = game.settings.get("narrative-portrait-spotlight", "maxWidthPercent");
+                // Fetch separate size settings for PC and NPC
+                const maxHeightPercent = isPC
+                    ? game.settings.get("narrative-portrait-spotlight", "playerSize")
+                    : game.settings.get("narrative-portrait-spotlight", "npcSize");
+                const maxWidthPercent = isPC
+                    ? game.settings.get("narrative-portrait-spotlight", "playerSize")
+                    : game.settings.get("narrative-portrait-spotlight", "npcSize");
                 const fadeTime = game.settings.get("narrative-portrait-spotlight", "fadeTime");
 
                 const scale = Math.min(
@@ -118,8 +132,13 @@ Hooks.once('ready', () => {
                     (screenWidth * maxWidthPercent) / width
                 );
 
-                const existingCount = Sequencer.EffectManager.getEffects()
-                    .filter(effect => effect.data.name.startsWith(`${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-`)).length;
+                let existingCount = 0;
+                if (Sequencer?.EffectManager?.getEffects) {
+                    existingCount = Sequencer.EffectManager.getEffects()
+                        .filter(effect => effect.data.name.startsWith(`${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-`)).length;
+                } else {
+                    this.log("Sequencer or EffectManager is not available.", '', 'error');
+                }
 
                 const position = this.getPortraitPosition(isPC, screenWidth, screenHeight, existingCount);
 
@@ -141,7 +160,7 @@ Hooks.once('ready', () => {
                         .screenSpaceAboveUI(screenSpaceAboveUI)
                         .fadeIn(fadeTime)
                         .fadeOut(fadeTime)
-                        .zIndex(0) 
+                        .zIndex(0)
                         .persist()
                         .forUsers(activeUsersFilter 
                             ? game.users.filter(u => u.active).map(u => u.id) 
@@ -150,7 +169,7 @@ Hooks.once('ready', () => {
 
                 this.log(game.settings.get("narrative-portrait-spotlight", "displayingPortraitMessage").replace("{tokenName}", token.name), { position, scale }, 'info');
             } catch (error) {
-                console.error('Narrative Portrait Spotlight Error:', error);
+                this.log(`Failed to display portrait: ${error.message}`, '', 'error');
                 ui.notifications.error(`Failed to display portrait: ${error.message}`);
             }
         }
@@ -159,8 +178,8 @@ Hooks.once('ready', () => {
          * Toggles the portrait spotlight for all selected tokens.
          */
         async togglePortraitsForSelectedTokens() {
-            const selectedTokens = canvas.tokens.controlled;
-            if (!selectedTokens.length) {
+            const selectedTokens = canvas?.tokens?.controlled;
+            if (!selectedTokens || !selectedTokens.length) {
                 ui.notifications.warn(game.settings.get("narrative-portrait-spotlight", "noTokenSelectedMessage"));
                 return;
             }
@@ -169,25 +188,38 @@ Hooks.once('ready', () => {
                 const isPC = token.actor?.hasPlayerOwner;
                 const effectNamePrefix = game.settings.get("narrative-portrait-spotlight", "effectNamePrefix");
                 const effectName = `${effectNamePrefix}-${isPC ? 'pc' : 'npc'}-${token.id}`;
-                const isShowing = Sequencer.EffectManager.getEffects({
-                    name: effectName
-                }).length > 0;
+                let isShowing = false;
+
+                if (Sequencer?.EffectManager?.getEffects) {
+                    isShowing = Sequencer.EffectManager.getEffects({ name: effectName }).length > 0;
+                } else {
+                    this.log("Sequencer or EffectManager is not available.", '', 'error');
+                }
+
                 await this.displayPortrait(token, !isShowing);
             }
         }
 
         /**
          * Adds a background image to the screen.
+         * @param {string} imageUrl - The URL of the background image. If null, uses the default from settings.
          */
         async addBackground(imageUrl = null) {
-
-
-            // If imageUrl is not provided, use the one from settings
-            const backgroundUrl = imageUrl;
+            const backgroundUrl = imageUrl || game.settings.get("narrative-portrait-spotlight", "defaultBackgroundUrl");
+            if (!backgroundUrl) {
+                this.log("No background URL provided or set in settings.", '', 'warn');
+                return;
+            }
 
             const fadeTime = 2000;
             const zIndex = -10;
             const effectName = "background-image";
+
+            // Check if Sequencer and EffectManager are available
+            if (!Sequencer?.EffectManager?.getEffects) {
+                this.log("Sequencer or EffectManager is not available.", '', 'error');
+                return;
+            }
 
             // Check if background is already active
             const isActive = Sequencer.EffectManager.getEffects({ name: effectName }).length > 0;
@@ -198,7 +230,7 @@ Hooks.once('ready', () => {
 
             try {
                 // Preload the background image to ensure it's valid
-                const { width: imgWidth, height: imgHeight } = await this.preloadImage(imageUrl);
+                const { width: imgWidth, height: imgHeight } = await this.preloadImage(backgroundUrl);
 
                 const screenWidth = window.innerWidth;
                 const screenHeight = window.innerHeight;
@@ -208,19 +240,23 @@ Hooks.once('ready', () => {
                 const scaleY = screenHeight / imgHeight;
                 const scale = Math.max(scaleX, scaleY); // Use the larger scale to cover the screen
 
+                // Fetch background opacity from settings
+                const backgroundOpacity = game.settings.get("narrative-portrait-spotlight", "backgroundOpacity");
+
                 await new Sequence()
                     .effect()
                         .name(effectName)
                         .file(backgroundUrl)
                         .screenSpace()
                         .screenSpacePosition({ x: 0.5, y: 0.5 })
-                        .screenSpaceScale({ x: scale, y: scale})
+                        .screenSpaceScale({ x: scale, y: scale })
                         .screenSpaceAnchor({ x: 0.5, y: 0.5 })
                         .screenSpaceAboveUI(false) // Ensure it's below UI
                         .fadeIn(fadeTime)
                         .fadeOut(fadeTime)
-                        .persist()
                         .zIndex(zIndex)
+                        .persist()
+                        .opacity(backgroundOpacity) // Set the opacity
                         .forUsers(game.users.map(u => u.id))
                     .play();
 
@@ -237,6 +273,11 @@ Hooks.once('ready', () => {
         async removeBackground() {
             const effectName = "background-image";
 
+            if (!Sequencer?.EffectManager?.getEffects) {
+                this.log("Sequencer or EffectManager is not available.", '', 'error');
+                return;
+            }
+
             const isActive = Sequencer.EffectManager.getEffects({ name: effectName }).length > 0;
             if (!isActive) {
                 this.log("Background image is not active.", '', 'info');
@@ -251,13 +292,41 @@ Hooks.once('ready', () => {
                 ui.notifications.error(`Failed to remove background image: ${error.message}`);
             }
         }
+
+        /**
+         * Transitions from one background image to another smoothly.
+         * @param {string} newImageUrl - The URL of the new background image.
+         */
+        async transitionBackground(newImageUrl) {
+            const fadeTime = 1000; // Duration for fade out and fade in
+
+            if (!newImageUrl) {
+                this.log("No new background URL provided for transition.", '', 'warn');
+                return;
+            }
+
+            try {
+                // Fade out current background
+                await Sequencer.EffectManager.endEffects({ name: "background-image" });
+                this.log("Fading out current background...", '', 'info');
+
+                // Add new background
+                await this.addBackground(newImageUrl);
+                this.log("Transitioned to new background successfully.", '', 'info');
+            } catch (error) {
+                this.log(`Failed to transition background: ${error.message}`, '', 'error');
+                ui.notifications.error(`Failed to transition background: ${error.message}`);
+            }
+        }
     }
 
-    
     // Initialize the PortraitSpotlight instance
     game.narrativePortraitSpotlight = new PortraitSpotlight();
 
     // Example: Bind the toggle function to a hotkey or a UI button as needed
     // For instance, you can create a macro that calls:
     // game.narrativePortraitSpotlight.togglePortraitsForSelectedTokens();
+
+    // Example: Transition background via a macro or UI interaction
+    // game.narrativePortraitSpotlight.transitionBackground('path/to/new/background.jpg');
 });
