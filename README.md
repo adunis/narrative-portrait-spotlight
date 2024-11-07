@@ -1,10 +1,13 @@
 # Narrative Portrait Spotlight
 
-**Narrative Portrait Spotlight** is a Foundry VTT module designed to enhance your tabletop role-playing experience by dynamically displaying character portraits on the screen. This module distinguishes between Player Characters (PCs) and Non-Player Characters (NPCs), positioning their portraits strategically to provide clear visual cues during gameplay.
+**Narrative Portrait Spotlight** is a Foundry VTT module designed to enhance your tabletop role-playing experience by dynamically displaying character portraits on the screen. This module distinguishes between Player Characters (PCs) and Non-Player Characters (NPCs), positioning their portraits strategically to provide clear visual cues during gameplay. Additionally, you can set a **custom background image** for added visual ambiance, enhancing immersion in key narrative moments.
 
 ![Screenshot 2024-10-25 131918](https://github.com/user-attachments/assets/0172a53b-7a9d-4bea-b0cf-d189dde3a788)
 
 https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
+
+https://github.com/user-attachments/assets/ec8e417e-0eef-4449-bfcc-354fb30d59bc
+
 
 ---
 
@@ -15,6 +18,7 @@ https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
 - [Usage](#usage)
   - [Adding a Portrait to the Spotlight](#adding-a-portrait-to-the-spotlight)
   - [Removing a Portrait from the Spotlight](#removing-a-portrait-from-the-spotlight)
+  - [Toggling the Background Image](#toggling-the-background-image)
   - [Removing All Portrait Effects](#removing-all-portrait-effects)
 - [Configuration](#configuration)
 - [Support](#support)
@@ -29,8 +33,9 @@ https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
   - **Player Characters (PCs)**: Defined as tokens with at least one user player owner, displayed on the **left** side of the screen.
   - **Non-Player Characters (NPCs)**: All other tokens, displayed on the **right** side of the screen.
 - **Multiple Portrait Management**: Supports multiple PCs or NPCs by slightly offsetting their portraits to prevent overlap.
+- **Custom Background Image**: Optionally set a custom background image to enhance the ambiance of scenes and key moments.
 - **Resizing of Low-Resolution Images**: Automatically resizes low-resolution images to maintain clarity and consistency in portrait display.
-- **Toggle Functionality**: Easily add or remove portraits from the spotlight using a simple macro.
+- **Toggle Functionality**: Easily add or remove portraits and background images with a simple macro.
 - **Remove All Portrait Effects**: Quickly remove all active portrait effects with a dedicated macro, useful for clearing the screen or troubleshooting.
 - **Advanced Settings**: Configure various aspects of portrait display, including maximum size percentages, fade times, and logging verbosity.
 
@@ -86,19 +91,26 @@ https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
    - Click the **"Toggle Portrait Spotlight"** macro button while the token is selected.
    - The portrait will **fade out** and be removed from the spotlight display.
 
+### Toggling the Background Image
+
+1. **Run the Toggle Background Macro**:
+   - Locate and run the **"Toggle Background Image"** macro.
+   - If no background image is set, a file picker will appear, allowing you to select an image file to set as the background.
+   - If a background is already set, running the macro will remove it, restoring the default view.
+
+2. **Using the File Picker**:
+   - Select an image through the file picker to set as the background.
+   - Once chosen, the background image will immediately display, adding a custom visual effect to your scene.
+
 ### Removing All Portrait Effects
 
 1. **Run the Macro**:
    - Locate the **"Remove All Portrait Effects"** macro in your **Macros Directory**.
    - Drag the macro to your **Hotbar** for easy access.
-   - Click the macro button to remove all active portrait effects from the screen.
-
-2. **Confirmation Prompt**:
-   - Upon clicking, a confirmation dialog will appear asking if you're sure you want to remove all portrait effects.
-   - Confirm by clicking **Yes** to proceed, or **No** to cancel.
+   - Click the macro button to remove all active portrait and background effects from the screen.
 
 3. **Outcome**:
-   - All portraits managed by **Narrative Portrait Spotlight** will be removed, clearing the screen of any spotlighted portraits.
+   - All portraits and the background image managed by **Narrative Portrait Spotlight** will be removed, clearing the screen of any spotlighted visuals.
 
 ---
 
@@ -181,34 +193,12 @@ https://github.com/user-attachments/assets/402399d1-76a7-4787-b571-7957e20ecd14
     - "error": Error
   - **Default**: "debug"
 
-- **Custom Messages**:
-  - **No Token Selected Message**:
-    - **Description**: Message displayed when no token is selected.
-    - **Type**: String
-    - **Default**: "Please select at least one token!"
-  
-  - **No Portrait Found Message**:
-    - **Description**: Message displayed when no portrait image is found for a token.
-    - **Type**: String
-    - **Default**: "No portrait image found for {tokenName}"
-  
-  - **Hiding Portrait Message**:
-    - **Description**: Message displayed when hiding a portrait.
-    - **Type**: String
-    - **Default**: "Hiding portrait for {tokenName}"
-  
-  - **Displaying Portrait Message**:
-    - **Description**: Message displayed when displaying a portrait.
-    - **Type**: String
-    - **Default**: "Portrait displayed for {tokenName}"
-
 ### Resizing Low-Resolution Images
 
 **Narrative Portrait Spotlight** automatically handles the resizing of low-resolution images to ensure that portraits appear clear and consistent. The resizing parameters can be adjusted via the following settings:
 
 - **Max Height Percentage**: Adjusts the maximum height of the portrait relative to the screen height.
 - **Max Width Percentage**: Adjusts the maximum width of the portrait relative to the screen width.
-- **Scale Calculation**: The module calculates the appropriate scale based on the image's original dimensions and the configured maximum percentages.
 
 ### Adjusting Log Level
 
@@ -218,8 +208,6 @@ Control the verbosity of logs generated by the module:
 - **Info**: General informational logs.
 - **Warn**: Warning messages indicating potential issues.
 - **Error**: Only error messages are logged.
-
-Adjusting the log level can help manage console output based on your current needs.
 
 ---
 
